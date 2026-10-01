@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>André Fivelsdal Stødle</title>
+<meta name="description" content="Portefølje – kreativ designer i Bergen som kombinerer psykologi og design.">
+<style>
+/* Start page: the portfolio runs at exactly 1280×832 (MacBook Air 13" in points)
+   inside a drawn MacBook Air that scales to fit the window.
+   Under 1024px wide (phones, small tablets) the portfolio fills the screen instead. */
+:root{
+  --stage:#0f2533; --stage-glow:#173547; --lid:#0b0b0d; --alu-hi:#e6e7ea; --alu-lo:#a6a9b0; --edge:#c3c6cc;
+  --site:#fdf0d5;
+  color-scheme: dark;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{background:radial-gradient(ellipse at 50% 42%, var(--stage-glow), var(--stage) 70%);background-color:var(--stage);overflow:hidden}
+
+.stage{position:absolute;left:50%;top:50%;width:1430px;height:906px;transform-origin:50% 50%;transform:translate(-50%,-50%) scale(var(--s,.5))}
+.lid{position:absolute;left:53px;top:0;width:1324px;height:878px;background:var(--lid);border-radius:28px 28px 8px 8px;padding:22px 22px 24px;box-shadow:0 0 0 2px var(--edge), inset 0 0 0 1px #2a2a2e}
+.screen{position:relative;width:1280px;height:832px;background:var(--site);overflow:hidden;border-radius:6px 6px 0 0}
+.screen iframe{display:block;width:1280px;height:832px;border:0;background:var(--site)}
+.notch{position:absolute;left:715px;top:22px;width:168px;height:26px;margin-left:-84px;background:var(--lid);border-radius:0 0 12px 12px;z-index:2}
+.notch::after{content:"";position:absolute;left:50%;top:9px;width:8px;height:8px;margin-left:-4px;border-radius:50%;background:#1d2633;box-shadow:inset 0 0 0 2px #10151c}
+.base{position:absolute;left:0;top:876px;width:1430px;height:20px;background:linear-gradient(var(--alu-hi),var(--alu-lo));border-radius:2px 2px 22px 22px / 2px 2px 14px 14px;box-shadow:0 18px 30px -10px rgba(0,0,0,.6)}
+.base::before{content:"";position:absolute;left:50%;top:0;width:200px;height:8px;margin-left:-100px;background:linear-gradient(#9c9fa6,#c4c7cd);border-radius:0 0 10px 10px}
+
+.hits{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.hits a{position:absolute;display:none;pointer-events:auto;background:transparent;cursor:pointer}
+.hits a:focus-visible{outline:2px solid #c1121f;outline-offset:3px}
+
+@media (max-width:1023px){
+  body{background:var(--site)}
+  .stage{position:fixed;inset:0;width:auto;height:auto;transform:none}
+  .lid{position:absolute;inset:0;width:auto;height:auto;padding:0;border-radius:0;box-shadow:none;background:var(--site)}
+  .screen,.screen iframe{width:100%;height:100%;border-radius:0}
+  .notch,.base{display:none}
+}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <div class="lid">
+    <div class="screen"><iframe src="hjem.html" data-mockup title="Porteføljen til André Fivelsdal Stødle"></iframe></div>
+  </div>
+  <div class="notch" aria-hidden="true"></div>
+  <div class="base" aria-hidden="true"></div>
+</div>
+<script>
+(function () {
+  var stage = document.getElementById('stage');
+  function fit() {
+    var s = Math.min((window.innerWidth - 64) / 1430, (window.innerHeight - 56) / 906);
+    stage.style.setProperty('--s', Math.max(s, 0.2).toFixed(4));
+  }
+  fit();
+  window.addEventListener('resize', fit);
+
+  /* External links (Innoaktiv, LinkedIn) live inside the screen frame, where the viewer
+     blocks them. Place a real link on this page exactly over each one, so the visitor's
+     click lands on a normal link the viewer opens in a new tab. */
+  var frame = stage.querySelector('iframe');
+  var layer = document.createElement('div');
+  layer.className = 'hits';
+  stage.querySelector('.screen').appendChild(layer);
+  var pairs = [];
+
+  function place() {
+
+    pairs.forEach(function (p) {
+      var r = p.src.getBoundingClientRect();
+      var hidden = r.width === 0 || r.bottom < 0 || r.top > frame.clientHeight;
+      p.hit.style.display = hidden ? 'none' : 'block';
+      if (hidden) return;
+      p.hit.style.left = r.left + 'px'; p.hit.style.top = r.top + 'px';
+      p.hit.style.width = r.width + 'px'; p.hit.style.height = r.height + 'px';
+      p.hit.style.borderRadius = getComputedStyle(p.src).borderRadius;
+    });
+  }
+  function schedule() { place(); }
+
+  function bind() {
+    layer.textContent = ''; pairs = [];
+    var win, doc;
+    try { win = frame.contentWindow; doc = frame.contentDocument; } catch (e) { return; }
+    if (!doc) return;
+    doc.querySelectorAll('a[href^="http"]').forEach(function (src) {
+      var hit = document.createElement('a');
+      hit.href = src.href; hit.target = '_blank'; hit.rel = 'noopener';
+      hit.setAttribute('aria-label', src.getAttribute('aria-label') || src.textContent.trim() || src.href);
+      hit.addEventListener('mouseenter', function () { src.classList.add('is-hover'); });
+      hit.addEventListener('mouseleave', function () { src.classList.remove('is-hover'); });
+      hit.addEventListener('wheel', function (e) { win.scrollBy(0, e.deltaY); }, { passive: true });
+      layer.appendChild(hit);
+      pairs.push({ src: src, hit: hit });
+    });
+    win.addEventListener('scroll', schedule, { passive: true });
+    win.addEventListener('resize', schedule);
+    win.addEventListener('load', schedule);
+    if (doc.fonts && doc.fonts.ready) doc.fonts.ready.then(schedule);
+    place(); setTimeout(place, 300); setTimeout(place, 1000);
+  }
+  frame.addEventListener('load', bind);
+  window.addEventListener('resize', schedule);
+  bind();
+})();
+</script>
+</body>
+</html>
